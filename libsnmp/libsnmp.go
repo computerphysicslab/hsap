@@ -1,0 +1,3 @@
+package libsnmp
+
+func dummy() {}
