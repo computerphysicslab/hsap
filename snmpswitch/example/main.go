@@ -23,7 +23,7 @@ func main() {
 	}
 
 	// Loading hardcoded network structure
-	var N snmplib.Network
+	var N libsnmp.Network
 	err = viper.Unmarshal(&N)
 	if err != nil {
 		panic(fmt.Errorf("Unable to decode into struct, %v", err))
@@ -33,7 +33,7 @@ func main() {
 	// os.Exit(0)
 
 	// Get master table
-	mainSwitchArpTable := snmplib.GetMasterIPmacTable(N)
+	mainSwitchArpTable := libsnmp.GetMasterIPmacTable(N)
 	goDebug.Print("mainSwitchArpTable", mainSwitchArpTable)
 
 	// Benchmarking concurrency of snmpLib
