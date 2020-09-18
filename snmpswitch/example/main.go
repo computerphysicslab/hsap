@@ -1,11 +1,13 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"time"
 
 	"github.com/computerphysicslab/goPackages/goDebug"
 	"github.com/computerphysicslab/hsap/libsnmp"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -14,11 +16,19 @@ func nowAsUnixMilli() int64 {
 }
 
 func main() {
-	// Config
-	viper.SetConfigName("goSwitchSNMP") // name of config file (without extension)
-	viper.AddConfigPath(".")            // look for config in the working directory
-	err := viper.ReadInConfig()         // Find and read the config file
-	if err != nil {                     // Handle errors reading the config file
+	// Command line parameters/flags
+	flag.String("viperConfigName", "myNetwork", "network config filename")
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	pflag.Parse()
+	viper.BindPFlags(pflag.CommandLine)
+	viperConfigName := viper.GetString("viperConfigName")
+	fmt.Printf("viperConfigName: %+v\n", viperConfigName)
+
+	// Loading config YAML
+	viper.SetConfigName(viperConfigName) // name of config file (without extension)
+	viper.AddConfigPath(".")             // look for config in the working directory
+	err := viper.ReadInConfig()          // Find and read the config file
+	if err != nil {                      // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s", err))
 	}
 

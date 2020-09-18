@@ -1,0 +1,30 @@
+# API Config
+port: 3333
+timeout: 20
+
+# Network config
+MainSwitchIP: "72.14.211.154"
+
+# host, comunidad, descripcion, uplinks (puerto o trunk)
+Nodes:
+-
+  IP: "72.14.211.154"
+  Community: "public"
+  Description: "154.211.14.72.in-addr.arpa"
+  Uplinks:
+
+-
+  IP: "81.41.239.181"
+  Community: "public"
+  Description: "181.red-81-41-239.staticip.rima-tde.net"
+  Uplinks: 
+  - 25
+  - 26
+
+-
+  IP: "81.41.237.205"
+  Community: "public"
+  Description: "205.red-81-41-237.staticip.rima-tde.net"
+  Uplinks: 
+  - 25
+  - 26
