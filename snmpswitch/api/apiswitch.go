@@ -33,6 +33,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -45,6 +46,7 @@ import (
 	"github.com/computerphysicslab/hsap/libsnmp"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -178,11 +180,19 @@ func snmpIPscanJSON(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// Config
-	viper.SetConfigName("goSwitchSNMP") // name of config file (without extension)
-	viper.AddConfigPath(".")            // look for config in the working directory
-	err := viper.ReadInConfig()         // Find and read the config file
-	if err != nil {                     // Handle errors reading the config file
+	// Command line parameters/flags
+	flag.String("viperConfigName", "myNetwork", "network config filename")
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	pflag.Parse()
+	viper.BindPFlags(pflag.CommandLine)
+	viperConfigName := viper.GetString("viperConfigName")
+	fmt.Printf("viperConfigName: %+v\n", viperConfigName)
+
+	// Loading config YAML
+	viper.SetConfigName(viperConfigName) // name of config file (without extension)
+	viper.AddConfigPath(".")             // look for config in the working directory
+	err := viper.ReadInConfig()          // Find and read the config file
+	if err != nil {                      // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s", err))
 	}
 
@@ -220,6 +230,8 @@ func main() {
 	r.Route("/IPscan", func(r chi.Router) {
 		r.Get("/{ipToFind:[0-9]+.[0-9]+.[0-9]+.[0-9]+}", snmpIPscanJSON) // GET /IPscan/<IP>
 	})
+
+	fmt.Printf("Browse http://localhost:3333/test\n\n")
 
 	log.Fatal(http.ListenAndServe(":"+viper.GetString("port"), r)) // Launch server
 }
