@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/computerphysicslab/goPackages/goDebug"
 	"github.com/computerphysicslab/hsap/libsnmp"
+	"github.com/computerphysicslab/hsap/libstruct"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -38,13 +38,13 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("Unable to decode into struct, %v", err))
 	}
-	// goDebug.Print("network", N)
+	// libstruct.Print("network", N)
 	// fmt.Printf("N: %#v\n\n", N)
 	// os.Exit(0)
 
 	// Get master table
 	mainSwitchArpTable := libsnmp.GetMasterIPmacTable(N)
-	goDebug.Print("mainSwitchArpTable", mainSwitchArpTable)
+	libstruct.Print("mainSwitchArpTable", mainSwitchArpTable)
 
 	// Benchmarking concurrency of snmpLib
 	t00 := nowAsUnixMilli()
@@ -52,7 +52,7 @@ func main() {
 	// Check IP: given an IP loop every switch querying its ARP table looking for an IP matching
 	ipToFind := "10.36.11.205"
 	IPscan := libsnmp.ScanIP(ipToFind, N)
-	goDebug.Print("IPscan", IPscan)
+	libstruct.Print("IPscan", IPscan)
 
 	// Benchmarking concurrency of snmpLib, results
 	fmt.Printf("\n\nFull process time elapsed: %.3f s", (float64(nowAsUnixMilli()-t00))/1000.0)
