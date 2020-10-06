@@ -145,3 +145,63 @@ func GetOIDsubtree(IP string, _Community string, OID string) []string {
 
 	return output
 }
+
+// GetOIDsSubtree query several OIDs subtrees w/ snmpwalk
+func GetOIDsSubtree(IP string, _Community string, OIDs []string) []string {
+	var output []string
+
+	// fmt.Printf("GetOIDsubtree: IP, _Community, OID: %s, %s, %s\n", IP, _Community, OID)
+
+	snmp, err := snmpgo.NewSNMP(snmpgo.SNMPArguments{
+		Version:   snmpgo.V2c,
+		Address:   fmt.Sprintf("%s:161", IP),
+		Retries:   1,
+		Community: _Community,
+		Timeout:   time.Duration(500) * time.Millisecond,
+	})
+	if err != nil {
+		// Failed to create snmpgo.SNMP object
+		fmt.Println(err)
+		return output
+	}
+
+	oids, err := snmpgo.NewOids(OIDs)
+	if err != nil {
+		// Failed to parse Oids
+		fmt.Println(err)
+		return output
+	}
+
+	if err = snmp.Open(); err != nil {
+		// Failed to open connection
+		fmt.Println(err)
+		return output
+	}
+	defer snmp.Close()
+
+	pdu, err := snmp.GetBulkWalk(oids, 0, 10)
+	if err != nil {
+		// Failed to request
+		fmt.Println(err)
+		return output
+	}
+	if pdu.ErrorStatus() != snmpgo.NoError {
+		// Received an error from the agent
+		fmt.Println(pdu.ErrorStatus(), pdu.ErrorIndex())
+	}
+
+	// get VarBind list
+	// fmt.Printf("DEBUG: len(pdu.VarBinds()): %d\n", len(pdu.VarBinds()))
+	// goDebug.Print("pdu.VarBinds()", pdu.VarBinds())
+
+	// select a VarBind
+	// fmt.Printf("DEBUG: pdu.VarBinds(): %+v\n", pdu.VarBinds())
+	// fmt.Printf("pdu.VarBinds().MatchOid(oids[0])): %+v\n", pdu.VarBinds().MatchOid(oids[0]))
+
+	for _, r := range pdu.VarBinds() {
+		// fmt.Printf("DEBUG: r: %+v\n", r)
+		output = append(output, r.String())
+	}
+
+	return output
+}

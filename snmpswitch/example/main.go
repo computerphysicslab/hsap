@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/computerphysicslab/hsap/libsnmp"
@@ -41,6 +42,9 @@ func main() {
 	// libstruct.Print("network", N)
 	// fmt.Printf("N: %#v\n\n", N)
 	// os.Exit(0)
+
+	libsnmp.GetOIDsSubtree("10.41.137.129", "SACYLCom", []string{"1.3.6.1.4.1.9.9.128.1.1.1.1.3", "1.3.6.1.2.1.3.1.1.2.149"})
+	os.Exit(0)
 
 	// Get master table
 	mainSwitchArpTable := libsnmp.GetMasterIPmacTable(N)
