@@ -14,6 +14,7 @@ FROM alpine:latest
 WORKDIR /root/
 COPY --from=0 /usr/local/go/src/apiswitch/apiswitch .
 COPY hsapNetwork.yaml /root/
+COPY --from=0 /usr/local/go/src/apiswitch/docs /root/docs
 CMD ["./apiswitch", "--viperConfigName=hsapNetwork"] # Exec Form
 # CMD ./apiswitch --viperConfigName=hsapNetwork # Shell Form
 
