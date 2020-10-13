@@ -1,0 +1,77 @@
+basePath: /
+host: localhost:3333
+info:
+  contact:
+    email: informatica.hsap@saludcastillayleon.es
+    name: Departamento de Informática del Hospital Santiago Apóstol (Miranda de Ebro) de hsap
+    url: http://www.hsap.sacyl.es/
+  description: API en goLang que consulta por SNMP los switches de red
+  license:
+    name: Public domain
+    url: https://creativecommons.org/publicdomain/zero/1.0/
+  title: goSwitchSNMP API
+  version: "1.0"
+paths:
+  /:
+    get:
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: ok
+          schema:
+            type: string
+      summary: Shows API description
+  /IPscan:
+    get:
+      parameters:
+      - description: IP address to scan
+        in: path
+        name: ipToFind
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            type: string
+      summary: Displays JSON w/ matching ports on network switches for a given IP address
+  /mainSwitchArpTable:
+    get:
+      parameters:
+      - description: VLAN identifier to filter out ARP table entries
+        in: path
+        name: vlanFilter
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            type: string
+      summary: Displays JSON w/ main switch ARP table (IP => MAC) restricted by VLAN
+  /swagger:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            type: string
+      summary: Displays JSON w/ API doc built by swaggo
+  /test:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            type: string
+      summary: Performs a minimal test showing API ip address, server time
+swagger: "2.0"

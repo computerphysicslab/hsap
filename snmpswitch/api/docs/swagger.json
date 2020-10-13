@@ -1,0 +1,119 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API en goLang que consulta por SNMP los switches de red",
+        "title": "goSwitchSNMP API",
+        "contact": {
+            "name": "Departamento de Informática del Hospital Santiago Apóstol (Miranda de Ebro) de hsap",
+            "url": "http://www.hsap.sacyl.es/",
+            "email": "informatica.hsap@saludcastillayleon.es"
+        },
+        "license": {
+            "name": "Public domain",
+            "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:3333",
+    "basePath": "/",
+    "paths": {
+        "/": {
+            "get": {
+                "produces": [
+                    "text/plain"
+                ],
+                "summary": "Shows API description",
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/IPscan": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Displays JSON w/ matching ports on network switches for a given IP address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "IP address to scan",
+                        "name": "ipToFind",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/mainSwitchArpTable": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Displays JSON w/ main switch ARP table (IP =\u003e MAC) restricted by VLAN",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "VLAN identifier to filter out ARP table entries",
+                        "name": "vlanFilter",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/swagger": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Displays JSON w/ API doc built by swaggo",
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/test": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Performs a minimal test showing API ip address, server time",
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

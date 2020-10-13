@@ -177,7 +177,7 @@ func snmpMainSwitchArpTableJSON(w http.ResponseWriter, r *http.Request) {
 // @Router /mainSwitchArpTable [get]
 func snmpMainSwitchArpTableVlanJSON(w http.ResponseWriter, r *http.Request) {
 	vlanFilter := chi.URLParam(r, "vlanFilter")
-	mainSwitchArpTableVlan := snmplib.GetIPmacTableVLAN(myNetwork, vlanFilter)
+	mainSwitchArpTableVlan := libsnmp.GetIPmacTableVLAN(myNetwork, vlanFilter)
 
 	respondWithJSON(w, 200, mainSwitchArpTableVlan)
 }
