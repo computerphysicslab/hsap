@@ -63,21 +63,26 @@ func GetARPtablePort(switchIP string, community string) (arpTable ARPtable) {
 }
 
 // This OID queries IP/MAC relations to every device connected on a switch
+var oidVLANmapping = "1.3.6.1.4.1.9.9.128.1.1.1.1.3"
 var oidARPtable = "1.3.6.1.2.1.3.1.1.2"
+
+// RegEx pattern to extract VLAN mapping indexes from OID name
+var regexpGetVLANidfromOID = regexp.MustCompile(`^` + oidVLANmapping + `\.([0-9]+)\.0$`)
 
 // RegEx pattern to extract IP from OID name
 var regexpGetIPfromOID = regexp.MustCompile(`^` + oidARPtable + `\.([0-9]+\.[0-9]+)\.([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)$`)
 
 // GetARPtable render ARP table (IP => MAC) of a given switch, by quering the OID using SNMP
-func GetARPtable(switchIP string, community string) (arpTable ARPtable) {
-	arpTable = make(ARPtable) // Initialize inner returning map
+// vLANfilter parameter if not "" restricts query to addresses belonging to that vLAN
+func GetARPtable(switchIP, community, vLANfilter string) (arpTable ARPtable) {
+	VLANmappings := make(map[string]string)    // Initialize inner VLAN map
+	VLANmappingsRev := make(map[string]string) // Initialize inner reverse VLAN map
+	arpTable = make(ARPtable)                  // Initialize inner returning map
 
-	// get ports on a ARP table indexed by MAC numeric address
-	// arpTablePort := GetARPtablePort(switchIP, community)
-	// goDebug.Print("arpTablePort", arpTablePort)
+	// First: get VLAN mappings to refer to network segments properly
+	vlanMappingRAW := GetOIDsubtree(switchIP, community, oidVLANmapping)
 
-	arpTableRAW := GetOIDsubtree(switchIP, community, oidARPtable)
-	for _, row := range arpTableRAW {
+	for _, row := range vlanMappingRAW {
 		// fmt.Printf("ROW: %s\n", row)
 
 		var oidResult AnOID
@@ -86,6 +91,38 @@ func GetARPtable(switchIP string, community string) (arpTable ARPtable) {
 			fmt.Println("JSON unmarshal error: ", err)
 		}
 		// goDebug.Print("oidResult", oidResult)
+
+		// VLAN mappings
+		VLANindex := regexpGetVLANidfromOID.ReplaceAllString(oidResult.Oid, `$1`)
+		VLANvalue := oidResult.Variable.Value
+		VLANmappings[VLANvalue] = VLANindex
+		VLANmappingsRev[VLANindex] = VLANvalue
+	}
+
+	// get ports on an ARP table indexed by MAC numeric address
+	// arpTablePort := GetARPtablePort(switchIP, community)
+	// goDebug.Print("arpTablePort", arpTablePort)
+
+	// Second: get ARP table from main switch as well
+	// Filtered by VLAN if specified on vLANfilter
+	oidToQuery := oidARPtable
+	if vLANfilter != "" {
+		oidToQuery = oidARPtable + "." + VLANmappingsRev[vLANfilter]
+		// goDebug.Print("oidToQuery", oidToQuery) ; os.Exit(0)
+	}
+	arpTablePlusVLANmappingRAW := GetOIDsubtree(switchIP, community, oidToQuery)
+
+	for _, row := range arpTablePlusVLANmappingRAW {
+		// fmt.Printf("ROW: %s\n", row)
+
+		var oidResult AnOID
+		err := json.Unmarshal([]byte(row), &oidResult)
+		if err != nil {
+			fmt.Println("JSON unmarshal error: ", err)
+		}
+		// goDebug.Print("oidResult", oidResult)
+
+		// ARP table
 		VLAN := regexpGetIPfromOID.ReplaceAllString(oidResult.Oid, `$1`)
 		IPaddress := regexpGetIPfromOID.ReplaceAllString(oidResult.Oid, `$2`)
 		MACaddress := oidResult.Variable.Value
@@ -113,12 +150,21 @@ func GetARPtable(switchIP string, community string) (arpTable ARPtable) {
 		// fmt.Printf("\n")
 
 		arpTable[IPaddress] = ARPtableItem{
-			VLAN:              VLAN,
+			VLAN:              VLANmappings[VLAN], // Apply VLAN mappings to results
 			MACaddress:        MACaddress,
 			MACaddressNumeric: MACaddressNumeric,
 			// Port:              arpTablePort[MACaddressNumeric].Port,
 		}
 	}
+
+	// Apply VLAN mappings to results
+	// for IPaddress := range arpTable {
+	// 	arpTable[IPaddress] = ARPtableItem{
+	// 		VLAN:              VLANmappings[arpTable[IPaddress].VLAN],
+	// 		MACaddress:        arpTable[IPaddress].MACaddress,
+	// 		MACaddressNumeric: arpTable[IPaddress].MACaddressNumeric,
+	// 	}
+	// }
 
 	return
 }
@@ -151,20 +197,35 @@ type SwitchInfo struct {
 // SwitchScan is the resulting list of switches after scanning
 type SwitchScan map[string]SwitchInfo
 
-// GetMasterIPmacTable queries the master switch to get the master IP=>MAC table
-func GetMasterIPmacTable(N Network) ARPtable {
-	// Find out main switch community from network config
-	mainSwitchCommunity := ""
+// Find out main switch community from network config
+func findMainSwitchCommunity(N Network) (mainSwitchCommunity string) {
 	for _, node := range N.Nodes {
 		if node.IP == N.MainSwitchIP {
 			mainSwitchCommunity = node.Community
 		}
 	}
 
+	return
+}
+
+// GetMasterIPmacTable queries the master switch to get the master IP=>MAC table
+func GetMasterIPmacTable(N Network) ARPtable {
+	mainSwitchCommunity := findMainSwitchCommunity(N)
+
 	// Getting the master IP => MAC table
-	mainSwitchArpTable := GetARPtable(N.MainSwitchIP, mainSwitchCommunity)
+	mainSwitchArpTable := GetARPtable(N.MainSwitchIP, mainSwitchCommunity, "")
 
 	return mainSwitchArpTable
+}
+
+// GetIPmacTableVLAN queries the master switch filtered by VLAN to get its IP=>MAC table
+func GetIPmacTableVLAN(N Network, VLANfilter string) ARPtable {
+	mainSwitchCommunity := findMainSwitchCommunity(N)
+
+	// Getting the filtered IP => MAC table
+	mainSwitchArpTableVLAN := GetARPtable(N.MainSwitchIP, mainSwitchCommunity, VLANfilter)
+
+	return mainSwitchArpTableVLAN
 }
 
 /*****************************/

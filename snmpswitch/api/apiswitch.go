@@ -24,6 +24,9 @@
 // To get the main ARP table:
 // $ curl -iX GET http://localhost:3333/mainSwitchArpTable
 //
+// To get the ARP table of a VLAN:
+// $ curl -iX GET http://localhost:3333/mainSwitchArpTable/2128
+//
 // To get the switch matching table for a given IP address:
 // $ curl -iX GET http://localhost:3333/IPscan/10.36.11.205
 //
@@ -166,6 +169,19 @@ func snmpMainSwitchArpTableJSON(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, 200, mainSwitchArpTable)
 }
 
+// mainSwitchArpTableVlan godoc
+// @Summary Displays JSON w/ main switch ARP table (IP => MAC) restricted by VLAN
+// @Produce json
+// @Param vlanFilter path string true "VLAN identifier to filter out ARP table entries"
+// @Success 200 {string} string	"ok"
+// @Router /mainSwitchArpTable [get]
+func snmpMainSwitchArpTableVlanJSON(w http.ResponseWriter, r *http.Request) {
+	vlanFilter := chi.URLParam(r, "vlanFilter")
+	mainSwitchArpTableVlan := snmplib.GetIPmacTableVLAN(myNetwork, vlanFilter)
+
+	respondWithJSON(w, 200, mainSwitchArpTableVlan)
+}
+
 // IPscan godoc
 // @Summary Displays JSON w/ matching ports on network switches for a given IP address
 // @Produce json
@@ -224,6 +240,9 @@ func main() {
 	r.Get("/swagger", swaggerHandler) // GET /swagger
 
 	// mainSwitch endpoint route
+	r.Route("/mainSwitchArpTable", func(r chi.Router) {
+		r.Get("/{vlanFilter:[0-9]+}", snmpMainSwitchArpTableVlanJSON) // GET /mainSwitchArpTable/<vlanFilter>
+	})
 	r.Get("/mainSwitchArpTable", snmpMainSwitchArpTableJSON) // GET /mainSwitchArpTable
 
 	// IPscan endpoint route
